@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #25406d;
+}
+
+body {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle focus ring that works on the dark background */
+:focus-visible {
+  outline: 2px solid #d9b682;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

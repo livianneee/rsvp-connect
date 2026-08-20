@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Relative base so the built app works when hosted from any sub-path
-// (e.g. GitHub Pages, a static host, or opened via file preview).
+// Absolute base so assets load correctly on personalised path routes
+// (e.g. /liviane) — see vercel.json for the SPA rewrite that makes those work.
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [react()],
 })

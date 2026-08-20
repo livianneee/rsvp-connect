@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import RsvpPage from './components/RsvpPage.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
 import { getEdition } from './data/editions.js'
+import { getGuestName } from './lib/guest.js'
 
 export default function App() {
   const params = new URLSearchParams(window.location.search)
   const edition = getEdition(params.get('edition'))
-  // Personalise the "Dear …" greeting from the invite link (?name=Olivia).
-  const guestName = params.get('name') || params.get('guest') || 'Guest'
+  // Personalise the "Dear …" greeting from the URL path:
+  //   /liviane -> "Liviane"   |   / -> "Guest"
+  const guestName = getGuestName(window.location.pathname)
 
   const [admin, setAdmin] = useState(params.get('admin') === '1')
 

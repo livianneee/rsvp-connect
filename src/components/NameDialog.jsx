@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 
 // Modal that collects the guest's name after they pick Yes / No.
 // This is where the RSVP data (name + response) is captured before it is stored.
-export default function NameDialog({ response, defaultName = '', onCancel, onSubmit }) {
+export default function NameDialog({
+  response,
+  defaultName = '',
+  saving = false,
+  errorMessage = '',
+  onCancel,
+  onSubmit,
+}) {
   const [name, setName] = useState(defaultName)
   const [error, setError] = useState('')
   const inputRef = useRef(null)
@@ -12,14 +19,15 @@ export default function NameDialog({ response, defaultName = '', onCancel, onSub
   useEffect(() => {
     inputRef.current?.focus()
     const onKey = (e) => {
-      if (e.key === 'Escape') onCancel()
+      if (e.key === 'Escape' && !saving) onCancel()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onCancel])
+  }, [onCancel, saving])
 
   function handleSubmit(e) {
     e.preventDefault()
+    if (saving) return
     const trimmed = name.trim()
     if (trimmed.length < 2) {
       setError('Please enter your name so we can register your RSVP.')
@@ -78,29 +86,33 @@ export default function NameDialog({ response, defaultName = '', onCancel, onSub
             }}
             placeholder="e.g. Olivia Yulianne"
             autoComplete="name"
+            disabled={saving}
             style={{ colorScheme: 'light', backgroundColor: '#ffffff', color: '#242424' }}
-            className="mt-1.5 w-full rounded-lg border border-ink/20 bg-white px-4 py-3 font-sans text-base text-ink placeholder:text-ink/35 outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/40"
+            className="mt-1.5 w-full rounded-lg border border-ink/20 bg-white px-4 py-3 font-sans text-base text-ink placeholder:text-ink/35 outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/40 disabled:opacity-60"
           />
           {error && <p className="mt-2 font-sans text-sm text-red-600">{error}</p>}
+          {errorMessage && <p className="mt-2 font-sans text-sm text-red-600">{errorMessage}</p>}
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-full border border-ink/15 px-5 py-2.5 font-poppins text-sm text-ink/70 transition-colors hover:bg-ink/5"
+              disabled={saving}
+              className="rounded-full border border-ink/15 px-5 py-2.5 font-poppins text-sm text-ink/70 transition-colors hover:bg-ink/5 disabled:opacity-50"
             >
               Back
             </button>
             <button
               type="submit"
-              className="rounded-full px-6 py-2.5 font-poppins text-sm font-medium text-white transition-transform hover:-translate-y-0.5"
+              disabled={saving}
+              className="rounded-full px-6 py-2.5 font-poppins text-sm font-medium text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
               style={
                 isYes
                   ? { backgroundColor: '#d9b682', color: '#242424' }
                   : { backgroundColor: '#25406d', color: '#ffffff' }
               }
             >
-              {isYes ? 'Confirm attendance' : 'Send response'}
+              {saving ? 'Saving…' : isYes ? 'Confirm attendance' : 'Send response'}
             </button>
           </div>
         </form>

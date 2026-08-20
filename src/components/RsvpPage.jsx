@@ -11,15 +11,28 @@ export default function RsvpPage({ edition, guestName }) {
   const [pending, setPending] = useState(null) // 'yes' | 'no' while dialog is open
   const [confirmed, setConfirmed] = useState(null) // stored record after submit
   const [saving, setSaving] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const greeting = guestName || 'Guest'
 
+  function openDialog(response) {
+    setSubmitError('')
+    setPending(response)
+  }
+
   async function handleSubmitName(name) {
     setSaving(true)
-    const record = await submitRsvp({ name, response: pending, edition: edition.slug })
-    setSaving(false)
-    setConfirmed(record)
-    setPending(null)
+    setSubmitError('')
+    try {
+      const record = await submitRsvp({ name, response: pending, edition: edition.slug })
+      setConfirmed(record)
+      setPending(null)
+    } catch (err) {
+      setSubmitError('Sorry, we couldn’t save your RSVP. Please check your connection and try again.')
+      console.error('RSVP submit failed:', err)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -46,7 +59,7 @@ export default function RsvpPage({ edition, guestName }) {
           {confirmed ? (
             <Confirmation record={confirmed} onChange={() => setConfirmed(null)} />
           ) : (
-            <RsvpButtons onRespond={(r) => setPending(r)} />
+            <RsvpButtons onRespond={openDialog} />
           )}
 
           <p className="max-w-content text-center font-sans text-xs font-medium tracking-wide text-white">
@@ -67,6 +80,8 @@ export default function RsvpPage({ edition, guestName }) {
         <NameDialog
           response={pending}
           defaultName={guestName && guestName !== 'Guest' ? guestName : ''}
+          saving={saving}
+          errorMessage={submitError}
           onCancel={() => (saving ? null : setPending(null))}
           onSubmit={handleSubmitName}
         />

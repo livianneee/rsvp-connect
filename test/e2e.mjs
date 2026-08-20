@@ -27,11 +27,18 @@ const check = (name, cond) => {
 
 try {
   // ---- Desktop ----
+  const fsMod = await import('node:fs/promises')
+  const idxHtml = await fsMod.readFile(path.join(dist, 'index.html'), 'utf-8')
+
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
   const page = await ctx.newPage()
-  await page.goto(`${base}/index.html?name=Olivia`, { waitUntil: 'networkidle' })
+  // Simulate the Vercel SPA rewrite so /olivia serves the app (path-based name).
+  await page.route('**/olivia', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: idxHtml }),
+  )
+  await page.goto(`${base}/olivia`, { waitUntil: 'networkidle' })
 
-  check('greeting shows guest name', (await page.locator('text=Olivia').count()) > 0)
+  check('greeting shows guest name from path', (await page.locator('text=Olivia').count()) > 0)
   check('Yes button present', (await page.getByRole('button', { name: /Yes, I/ }).count()) > 0)
   check('No button present', (await page.getByRole('button', { name: /No, can/ }).count()) > 0)
   check('date value present', (await page.locator('text=22nd October').count()) > 0)
@@ -81,6 +88,20 @@ try {
     return [header.join(','), ...body].join('\n')
   })
   check('csv has header + 2 data rows', csv.split('\n').length === 3)
+
+  // ---- Personalised path route (/name -> "Dear Name") ----
+  const pctx = await browser.newContext({ viewport: { width: 1200, height: 900 } })
+  const ppage = await pctx.newPage()
+  const fs = await import('node:fs/promises')
+  const indexHtml = await fs.readFile(path.join(dist, 'index.html'), 'utf-8')
+  // Simulate the Vercel SPA rewrite: /liviane serves index.html
+  await ppage.route('**/liviane', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: indexHtml }),
+  )
+  await ppage.goto(`${base}/liviane`, { waitUntil: 'networkidle' })
+  check('path /liviane greets "Liviane"', (await ppage.locator('text=Liviane').count()) > 0)
+  await ppage.goto(`${base}/index.html`, { waitUntil: 'networkidle' })
+  check('no path -> greets "Guest"', (await ppage.locator('span:has-text("Guest")').count()) > 0)
 
   // ---- Mobile render ----
   const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true })

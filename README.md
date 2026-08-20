@@ -30,6 +30,12 @@ npm run preview  # preview the production build
   "Shared storage with Supabase" below.
 - **Local** (fallback): browser `localStorage` when those vars are absent — good
   for local testing; each browser keeps its own copy.
+**Storage:** two modes, chosen automatically.
+- **Supabase** (shared): used when `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
+  are set. All responses land in one table you can read from any device. See
+  "Shared storage with Supabase" below.
+- **Local** (fallback): browser `localStorage` when those vars are absent — good
+  for local testing; each browser keeps its own copy.
 
 ### Collector view (admin)
 
@@ -45,6 +51,7 @@ Because this is a static site, the passcode is embedded in the built JavaScript 
 it's a deterrent that keeps casual guests out of the response list, not hard
 security. For truly private data, wire storage to a backend (see below).
 
+## Shared storage with Supabase
 ## Shared storage with Supabase
 
 All reads/writes go through one seam (`src/lib/dataSource.js`); no UI changes needed.
@@ -90,13 +97,23 @@ The client-side passcode is now used **only** in local (no-Supabase) mode.
 ## Personalising the greeting
 
 The "Dear …" line reads the guest name from the URL **path**:
+The "Dear …" line reads the guest name from the URL **path**:
 
 ```
 /liviane             -> "Dear Liviane"
 /jane-doe            -> "Dear Jane Doe"     (hyphens/underscores become spaces)
 /                    -> "Dear Guest"        (default)
+/liviane             -> "Dear Liviane"
+/jane-doe            -> "Dear Jane Doe"     (hyphens/underscores become spaces)
+/                    -> "Dear Guest"        (default)
 /?edition=singapore  -> select an edition (default: singapore)
 ```
+
+Names are auto-capitalised (`/liviane` -> "Liviane"). The path route relies on the
+SPA rewrite in `vercel.json`, so it works once deployed to Vercel. The name a guest
+types when they RSVP is prefilled from this greeting.
+
+(There is no `?name=` query option — the path is the single, canonical format.)
 
 Names are auto-capitalised (`/liviane` -> "Liviane"). The path route relies on the
 SPA rewrite in `vercel.json`, so it works once deployed to Vercel. The name a guest

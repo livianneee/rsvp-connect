@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getRsvps, clearRsvps, downloadCsv, BACKEND } from '../lib/dataSource.js'
+import { getRsvps, clearRsvps, downloadCsv, BACKEND } from '../lib/dataSource.js'
 import { ADMIN_PASSCODE } from '../config.js'
 import { getSession, onAuthChange, signIn, signOut } from '../lib/supabaseClient.js'
 
@@ -203,9 +204,21 @@ function Collector({ onClose, onSignOut, userEmail }) {
   const [loadError, setLoadError] = useState('')
 
   const isSupabase = BACKEND === 'supabase'
+  const [loadError, setLoadError] = useState('')
+
+  const isSupabase = BACKEND === 'supabase'
 
   async function refresh() {
     setLoading(true)
+    setLoadError('')
+    try {
+      setRows(await getRsvps())
+    } catch (err) {
+      setRows([])
+      setLoadError(err?.message || 'Could not load responses.')
+    } finally {
+      setLoading(false)
+    }
     setLoadError('')
     try {
       setRows(await getRsvps())
@@ -287,6 +300,16 @@ function Collector({ onClose, onSignOut, userEmail }) {
           >
             Refresh
           </button>
+          {!isSupabase && (
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={rows.length === 0}
+              className="rounded-full border border-red-300 px-5 py-2.5 font-sans text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+            >
+              Clear all
+            </button>
+          )}
           {!isSupabase && (
             <button
               type="button"

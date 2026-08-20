@@ -25,18 +25,22 @@ create policy "public can insert rsvp"
   to anon
   with check (true);
 
--- 3b) Allow the in-app admin view (?admin=1) to READ responses ---------------
---     WARNING: the anon key ships in the browser, so this makes every response
---     readable by anyone who has your site URL + inspects the key. The passcode
---     screen does NOT protect this. Only enable if guest names are not sensitive.
---     If you prefer to keep responses private, DELETE this policy and instead
---     view/export responses in the Supabase dashboard (Table Editor), or move
---     the admin behind Supabase Auth.
-create policy "public can read rsvp"
+-- 3b) Allow ONLY signed-in organizers to READ responses ---------------------
+--     Reads are restricted to authenticated users, so the public anon key can
+--     submit but cannot list responses. The in-app ?admin=1 view signs in via
+--     Supabase Auth (see step 4) to read this table.
+create policy "authenticated can read rsvp"
   on public.rsvps
   for select
-  to anon
+  to authenticated
   using (true);
 
 -- Note: no UPDATE or DELETE policies are created, so responses cannot be edited
 -- or deleted from the browser. Manage those in the Supabase dashboard.
+
+-- 4) Create the organizer account & lock down sign-ups -----------------------
+--    a. Authentication → Users → "Add user" → set your email + a password.
+--       (This is the account you'll use at /?admin=1.)
+--    b. Authentication → Providers → Email: turn OFF "Allow new users to sign up"
+--       (a.k.a. disable public sign-ups) so only accounts you create can log in.
+--    The app only ever calls sign-in (never sign-up), so no one can self-register.

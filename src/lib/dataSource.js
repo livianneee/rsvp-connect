@@ -10,15 +10,15 @@
 //
 // The rest of the app doesn't care which backend is active.
 // -----------------------------------------------------------------------------
-
+ 
 import { supabase, hasSupabase } from './supabaseClient.js'
-
+ 
 export const BACKEND = hasSupabase ? 'supabase' : 'local'
 const TABLE = 'rsvps'
 const STORAGE_KEY = 'gtx_rsvp_responses'
-
+ 
 // ---- Local (in-browser) helpers ------------------------------------------
-
+ 
 function storageAvailable() {
   try {
     const k = '__gtx_test__'
@@ -29,7 +29,7 @@ function storageAvailable() {
     return false
   }
 }
-
+ 
 function localReadAll() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -38,7 +38,7 @@ function localReadAll() {
     return []
   }
 }
-
+ 
 function localWriteAll(list) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
@@ -46,9 +46,9 @@ function localWriteAll(list) {
     /* storage unavailable — keep in-memory only */
   }
 }
-
+ 
 let memory = typeof window !== 'undefined' ? localReadAll() : []
-
+ 
 // Normalise a Supabase row to the shape the UI expects.
 function normalize(row) {
   return {
@@ -61,9 +61,9 @@ function normalize(row) {
     timestamp: row.created_at || row.timestamp,
   }
 }
-
+ 
 // ---- Public API -----------------------------------------------------------
-
+ 
 /**
  * Persist one RSVP.
  * @param {{name: string, response: 'yes'|'no', edition?: string, pax?: number, note?: string}} entry
@@ -77,13 +77,16 @@ export async function submitRsvp(entry) {
     pax: entry.pax ?? (entry.response === 'yes' ? 1 : 0),
     note: entry.note || '',
   }
-
+ 
   if (BACKEND === 'supabase') {
-    const { data, error } = await supabase.from(TABLE).insert(base).select().single()
+    // No .select() here on purpose: guests (anon) can INSERT but not SELECT under
+    // the secure RLS policies, so reading the row back would be denied. We just
+    // insert and build the confirmation record locally.
+    const { error } = await supabase.from(TABLE).insert(base)
     if (error) throw new Error(error.message)
-    return normalize(data)
+    return { id: `sb_${Date.now()}`, ...base, timestamp: new Date().toISOString() }
   }
-
+ 
   // local
   const record = {
     id:
@@ -96,7 +99,7 @@ export async function submitRsvp(entry) {
   localWriteAll(memory)
   return record
 }
-
+ 
 /** Return all stored RSVPs, newest first. */
 export async function getRsvps() {
   if (BACKEND === 'supabase') {
@@ -107,12 +110,12 @@ export async function getRsvps() {
     if (error) throw new Error(error.message)
     return (data || []).map(normalize)
   }
-
+ 
   // local
   if (storageAvailable()) memory = localReadAll()
   return [...memory].reverse()
 }
-
+ 
 /** Remove every stored RSVP. Local backend only. */
 export async function clearRsvps() {
   if (BACKEND === 'supabase') {
@@ -123,14 +126,14 @@ export async function clearRsvps() {
   memory = []
   localWriteAll(memory)
 }
-
+ 
 // ---- CSV export -----------------------------------------------------------
-
+ 
 function csvEscape(value) {
   const s = String(value ?? '')
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
-
+ 
 export function toCsv(rows) {
   const header = ['Name', 'RSVP', 'Pax', 'Note', 'Edition', 'Timestamp']
   const body = rows.map((r) =>
@@ -145,7 +148,7 @@ export function toCsv(rows) {
   )
   return [header.join(','), ...body].join('\n')
 }
-
+ 
 export function downloadCsv(rows, filename = 'gt-connect-rsvps.csv') {
   const csv = toCsv(rows)
   const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })

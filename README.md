@@ -30,6 +30,12 @@ npm run preview  # preview the production build
   "Shared storage with Supabase" below.
 - **Local** (fallback): browser `localStorage` when those vars are absent — good
   for local testing; each browser keeps its own copy.
+**Storage:** two modes, chosen automatically.
+- **Supabase** (shared): used when `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
+  are set. All responses land in one table you can read from any device. See
+  "Shared storage with Supabase" below.
+- **Local** (fallback): browser `localStorage` when those vars are absent — good
+  for local testing; each browser keeps its own copy.
 
 ### Collector view (admin)
 
@@ -46,6 +52,7 @@ it's a deterrent that keeps casual guests out of the response list, not hard
 security. For truly private data, wire storage to a backend (see below).
 
 ## Shared storage with Supabase
+## Shared storage with Supabase
 
 All reads/writes go through one seam (`src/lib/dataSource.js`); no UI changes needed.
 
@@ -55,40 +62,58 @@ All reads/writes go through one seam (`src/lib/dataSource.js`); no UI changes ne
 the contents of [`docs/supabase-setup.sql`](docs/supabase-setup.sql), and **Run**.
 This creates the `rsvps` table, enables Row Level Security, and adds policies.
 
-**3. Get your keys.** Project **Settings → API**: copy the **Project URL** and the
+**3. Create the organizer account & lock sign-ups** (in the Supabase dashboard):
+- **Authentication → Users → Add user**: set your email + a password. This is the
+  login you'll use at `/?admin=1`.
+- **Authentication → Providers → Email**: turn **off** "Allow new users to sign up"
+  so only accounts you create can log in. (The app only ever calls sign-in.)
+
+**4. Get your keys.** Project **Settings → API**: copy the **Project URL** and the
 **anon / public** key.
 
-**4. Set env vars.**
+**5. Set env vars.**
 - Local: create `.env` (see `.env.example`) with `VITE_SUPABASE_URL` and
   `VITE_SUPABASE_ANON_KEY`.
 - Vercel: **Settings → Environment Variables**, add the same two, then **redeploy**.
 
 That's it — the app switches to Supabase automatically when both vars are present.
+In Supabase mode, `/?admin=1` shows an **organizer sign-in** (not the passcode).
 
 ### Security model (read this)
 
 This is a static site, so the **anon key ships in the browser**. Your data is
-protected by **Row Level Security policies**, not by the app or the passcode:
-- The setup grants `anon` **INSERT** so guests can submit.
-- It also grants `anon` **SELECT** so the in-app `?admin=1` list works — but that
-  makes responses readable by anyone with your URL who inspects the key. If guest
-  names are sensitive, **remove the SELECT policy** (see the SQL comments) and view
-  responses in the **Supabase dashboard** (Table Editor, with CSV export) instead,
-  or put the admin behind Supabase Auth.
-- No UPDATE/DELETE policies are created, so responses can't be edited or deleted
-  from the browser — manage those in the dashboard. (The in-app "Clear all" button
-  is therefore hidden in Supabase mode.)
+protected by **Row Level Security (RLS) policies + Supabase Auth**, not by the app:
+- `anon` may **INSERT** only — guests can submit, but the public key cannot list
+  responses.
+- **SELECT** is granted only to **authenticated** users — the `/?admin=1` view
+  signs in via Supabase Auth to read the table, so responses stay private.
+- Sign-ups are disabled, so only the organizer account(s) you create can log in.
+- No UPDATE/DELETE policies exist, so responses can't be edited or deleted from the
+  browser — manage those in the dashboard. (The in-app "Clear all" is hidden in
+  Supabase mode.)
+
+The client-side passcode is now used **only** in local (no-Supabase) mode.
 
 ## Personalising the greeting
 
+The "Dear …" line reads the guest name from the URL **path**:
 The "Dear …" line reads the guest name from the URL **path**:
 
 ```
 /liviane             -> "Dear Liviane"
 /jane-doe            -> "Dear Jane Doe"     (hyphens/underscores become spaces)
 /                    -> "Dear Guest"        (default)
+/liviane             -> "Dear Liviane"
+/jane-doe            -> "Dear Jane Doe"     (hyphens/underscores become spaces)
+/                    -> "Dear Guest"        (default)
 /?edition=singapore  -> select an edition (default: singapore)
 ```
+
+Names are auto-capitalised (`/liviane` -> "Liviane"). The path route relies on the
+SPA rewrite in `vercel.json`, so it works once deployed to Vercel. The name a guest
+types when they RSVP is prefilled from this greeting.
+
+(There is no `?name=` query option — the path is the single, canonical format.)
 
 Names are auto-capitalised (`/liviane` -> "Liviane"). The path route relies on the
 SPA rewrite in `vercel.json`, so it works once deployed to Vercel. The name a guest

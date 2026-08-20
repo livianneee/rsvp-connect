@@ -17,3 +17,29 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const hasSupabase = Boolean(url && anonKey)
 
 export const supabase = hasSupabase ? createClient(url, anonKey) : null
+
+// ---- Auth helpers (used by the admin/collector view in Supabase mode) ------
+
+export async function getSession() {
+  if (!supabase) return null
+  const { data } = await supabase.auth.getSession()
+  return data.session
+}
+
+export function onAuthChange(callback) {
+  if (!supabase) return () => {}
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session))
+  return () => data.subscription.unsubscribe()
+}
+
+export async function signIn(email, password) {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw new Error(error.message)
+  return data.session
+}
+
+export async function signOut() {
+  if (!supabase) return
+  await supabase.auth.signOut()
+}

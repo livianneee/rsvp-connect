@@ -34,20 +34,42 @@ export default function Hero({ edition }) {
             }}
           />
         )}
-        {/* Scrim: darkens the top (behind the white branding) and bottom
-            (fades into the navy body), leaving the skyline clear in the middle. */}
+        {/* Scrim: keeps the top light (so the dark sponsor logos read on the sky),
+            gives the white branding a touch of contrast in the middle, and fades
+            into the navy body at the bottom. */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, rgba(20,36,64,0.62) 0%, rgba(28,48,84,0.28) 22%, rgba(37,64,109,0) 45%, rgba(37,64,109,0.7) 80%, #25406d 100%)',
+              'linear-gradient(180deg, rgba(37,64,109,0.10) 0%, rgba(37,64,109,0.05) 30%, rgba(37,64,109,0.10) 50%, rgba(37,64,109,0.7) 80%, #25406d 100%)',
           }}
         />
       </div>
 
       {/* Foreground branding */}
-      <div className="relative flex w-full max-w-wide flex-col items-center px-6 pb-16 pt-[clamp(72px,18vh,200px)] text-center">
-        <p className="font-script text-[clamp(20px,2.4vw,26px)] leading-none text-white/95">
+      <div className="relative flex w-full max-w-wide flex-col items-center px-6 pb-16 pt-[clamp(28px,6vh,56px)] text-center">
+        {/* Sponsors */}
+        {edition.sponsors?.length > 0 && (
+          <div className="flex flex-col items-center gap-3">
+            <p className="font-sans text-sm font-semibold text-white/90">Sponsors:</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+              {edition.sponsors.map((s) => (
+                <a
+                  key={s.name}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.name}
+                  className="inline-flex items-center transition-opacity hover:opacity-80"
+                >
+                  <img src={s.logo} alt={s.name} className={s.className || 'h-6 w-auto sm:h-7'} />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="mt-[clamp(44px,12vh,150px)] font-script text-[clamp(20px,2.4vw,26px)] leading-none text-white/95">
           {edition.tagline}
         </p>
 

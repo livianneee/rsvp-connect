@@ -132,7 +132,18 @@ export async function updateRsvp(entry) {
   }
  
   if (BACKEND === 'supabase') {
-    const { error } = await supabase.from(TABLE).update(patch).eq('slug', entry.slug)
+    // Update via a SECURITY DEFINER RPC. A direct table UPDATE silently affects
+    // zero rows for anonymous guests: with no SELECT policy for the anon role,
+    // PostgREST can't "see" the row to locate it, so the WHERE matches nothing
+    // (and still returns 204). The RPC updates the single row by slug with
+    // elevated rights, sidestepping that.
+    const { error } = await supabase.rpc('update_rsvp', {
+      p_slug: entry.slug,
+      p_name: patch.name,
+      p_response: patch.response,
+      p_pax: patch.pax,
+      p_note: patch.note,
+    })
     if (error) throw new Error(error.message)
     return { id: `sb_${Date.now()}`, ...patch, edition: entry.edition || 'singapore', slug: entry.slug, timestamp: new Date().toISOString() }
   }

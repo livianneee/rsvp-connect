@@ -79,6 +79,29 @@ $$;
  
 grant execute on function public.get_rsvp_status(text) to anon, authenticated;
  
+-- 3e) Let a guest UPDATE only their own row (the "update my response" flow) --
+--     A direct table UPDATE affects zero rows for anon (no SELECT policy to
+--     locate the row), so the update goes through this security-definer function
+--     which updates the single row matched by slug.
+create or replace function public.update_rsvp(
+  p_slug text,
+  p_name text,
+  p_response text,
+  p_pax int,
+  p_note text default ''
+)
+  returns void
+  language sql
+  security definer
+  set search_path = public
+as $$
+  update public.rsvps
+  set name = p_name, response = p_response, pax = p_pax, note = p_note
+  where slug = p_slug;
+$$;
+ 
+grant execute on function public.update_rsvp(text, text, text, int, text) to anon, authenticated;
+ 
 -- 4) Create the organizer account & lock down sign-ups -----------------------
 --    a. Authentication → Users → "Add user" → set your email + a password.
 --       (This is the account you'll use at /?admin=1.)

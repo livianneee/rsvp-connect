@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import RsvpPage from './components/RsvpPage.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
 import { getEdition } from './data/editions.js'
-import { getGuestName } from './lib/guest.js'
+import { getGuestName, getGuestSlug } from './lib/guest.js'
 
 export default function App() {
   const params = new URLSearchParams(window.location.search)
@@ -10,6 +10,8 @@ export default function App() {
   // Personalise the "Dear …" greeting from the URL path:
   //   /liviane -> "Liviane"   |   / -> "Guest"
   const guestName = getGuestName(window.location.pathname)
+  // Stable per-link key used to enforce one RSVP per invite link.
+  const guestSlug = getGuestSlug(window.location.pathname, guestName)
 
   const [admin, setAdmin] = useState(params.get('admin') === '1')
 
@@ -24,5 +26,5 @@ export default function App() {
   }, [])
 
   if (admin) return <AdminPanel onClose={() => setAdmin(false)} />
-  return <RsvpPage edition={edition} guestName={guestName} />
+  return <RsvpPage edition={edition} guestName={guestName} guestSlug={guestSlug} />
 }

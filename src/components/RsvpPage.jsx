@@ -1,19 +1,49 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Hero from './Hero.jsx'
 import Divider from './Divider.jsx'
 import RsvpButtons from './RsvpButtons.jsx'
 import NameDialog from './NameDialog.jsx'
 import EventDetails from './EventDetails.jsx'
 import Footer from './Footer.jsx'
-import { submitRsvp } from '../lib/dataSource.js'
+import { submitRsvp, updateRsvp, getRsvpStatus } from '../lib/dataSource.js'
 
-export default function RsvpPage({ edition, guestName }) {
+export default function RsvpPage({ edition, guestName, guestSlug }) {
+  // 'loading' while we check the DB, then 'new' (no response yet) or 'responded'.
+  const [status, setStatus] = useState('loading')
+  const [record, setRecord] = useState(null) // current response { name, response }
+  const [changing, setChanging] = useState(false) // picking a new answer to replace the old
   const [pending, setPending] = useState(null) // 'yes' | 'no' while dialog is open
-  const [confirmed, setConfirmed] = useState(null) // stored record after submit
   const [saving, setSaving] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   const greeting = guestName || 'Guest'
+  // The name is locked to the invite link (path). Only the generic link with no
+  // name falls back to an editable field.
+  const nameLocked = Boolean(guestName && guestName !== 'Guest')
+
+  // On load, ask the database whether this link already responded.
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const found = await getRsvpStatus(guestSlug)
+        if (!active) return
+        if (found) {
+          setRecord(found)
+          setStatus('responded')
+        } else {
+          setStatus('new')
+        }
+      } catch (err) {
+        // If the check fails, fall back to letting them respond.
+        if (active) setStatus('new')
+        console.error('RSVP status check failed:', err)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [guestSlug])
 
   function openDialog(response) {
     setSubmitError('')
@@ -23,17 +53,34 @@ export default function RsvpPage({ edition, guestName }) {
   async function handleSubmitName(name) {
     setSaving(true)
     setSubmitError('')
+    const entry = { name, response: pending, edition: edition.slug, slug: guestSlug }
+    const isUpdate = status === 'responded' || changing
     try {
-      const record = await submitRsvp({ name, response: pending, edition: edition.slug })
-      setConfirmed(record)
+      let rec
+      if (isUpdate) {
+        rec = await updateRsvp(entry)
+      } else {
+        try {
+          rec = await submitRsvp(entry)
+        } catch (err) {
+          // Row already exists for this link -> switch to updating it.
+          if (err?.code === 'DUPLICATE') rec = await updateRsvp(entry)
+          else throw err
+        }
+      }
+      setRecord(rec)
+      setStatus('responded')
+      setChanging(false)
       setPending(null)
     } catch (err) {
       setSubmitError('Sorry, we couldn’t save your RSVP. Please check your connection and try again.')
-      console.error('RSVP submit failed:', err)
+      console.error('RSVP save failed:', err)
     } finally {
       setSaving(false)
     }
   }
+
+  const showButtons = status === 'new' || changing
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-navy pb-20">
@@ -56,10 +103,28 @@ export default function RsvpPage({ edition, guestName }) {
             ))}
           </div>
 
-          {confirmed ? (
-            <Confirmation record={confirmed} onChange={() => setConfirmed(null)} />
+          {status === 'loading' ? (
+            <p className="pt-2 font-sans text-sm text-white/70">Checking your invitation…</p>
+          ) : showButtons ? (
+            <>
+              {changing && (
+                <p className="text-center font-sans text-sm text-gold-soft">
+                  Updating your response — pick your new answer below.
+                </p>
+              )}
+              <RsvpButtons onRespond={openDialog} />
+              {changing && (
+                <button
+                  type="button"
+                  onClick={() => setChanging(false)}
+                  className="font-sans text-sm text-white/60 underline underline-offset-4 hover:text-white"
+                >
+                  Never mind, keep my answer
+                </button>
+              )}
+            </>
           ) : (
-            <RsvpButtons onRespond={openDialog} />
+            <Confirmation record={record} onUpdate={() => setChanging(true)} />
           )}
 
           <p className="max-w-content text-center font-sans text-xs font-medium tracking-wide text-white">
@@ -79,7 +144,8 @@ export default function RsvpPage({ edition, guestName }) {
       {pending && (
         <NameDialog
           response={pending}
-          defaultName={guestName && guestName !== 'Guest' ? guestName : ''}
+          lockedName={nameLocked ? greeting : ''}
+          defaultName={record?.name || ''}
           saving={saving}
           errorMessage={submitError}
           onCancel={() => (saving ? null : setPending(null))}
@@ -90,8 +156,8 @@ export default function RsvpPage({ edition, guestName }) {
   )
 }
 
-// Replaces the buttons once a response is recorded.
-function Confirmation({ record, onChange }) {
+// Shown when this link has already responded. Update is always available.
+function Confirmation({ record, onUpdate }) {
   const isYes = record.response === 'yes'
   return (
     <div className="flex w-full flex-col items-center gap-3 pt-2 text-center animate-fade-up">
@@ -115,10 +181,10 @@ function Confirmation({ record, onChange }) {
       </div>
       <button
         type="button"
-        onClick={onChange}
+        onClick={onUpdate}
         className="font-sans text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white"
       >
-        Change my response
+        Update my response
       </button>
     </div>
   )

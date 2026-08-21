@@ -58,6 +58,7 @@ function normalize(row) {
     pax: row.pax,
     note: row.note || '',
     edition: row.edition || 'singapore',
+    slug: row.slug || '',
     timestamp: row.created_at || row.timestamp,
   }
 }
@@ -76,6 +77,7 @@ export async function submitRsvp(entry) {
     edition: entry.edition || 'singapore',
     pax: entry.pax ?? (entry.response === 'yes' ? 1 : 0),
     note: entry.note || '',
+    slug: entry.slug || '', // per-invite-link key; unique in the DB
   }
  
   if (BACKEND === 'supabase') {
@@ -83,11 +85,19 @@ export async function submitRsvp(entry) {
     // the secure RLS policies, so reading the row back would be denied. We just
     // insert and build the confirmation record locally.
     const { error } = await supabase.from(TABLE).insert(base)
-    if (error) throw new Error(error.message)
+    if (error) {
+      // 23505 = unique_violation -> this link already RSVP'd.
+      if (error.code === '23505') throw new DuplicateRsvpError()
+      throw new Error(error.message)
+    }
     return { id: `sb_${Date.now()}`, ...base, timestamp: new Date().toISOString() }
   }
  
   // local
+  if (base.slug) {
+    memory = storageAvailable() ? localReadAll() : memory
+    if (memory.some((r) => r.slug === base.slug)) throw new DuplicateRsvpError()
+  }
   const record = {
     id:
       (typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID()) ||
@@ -98,6 +108,82 @@ export async function submitRsvp(entry) {
   memory = [...memory, record]
   localWriteAll(memory)
   return record
+}
+ 
+// Thrown when an invite link has already submitted an RSVP.
+export class DuplicateRsvpError extends Error {
+  constructor() {
+    super('This invite has already responded.')
+    this.name = 'DuplicateRsvpError'
+    this.code = 'DUPLICATE'
+  }
+}
+ 
+/**
+ * Update the existing RSVP for an invite link (the "change once" flow).
+ * One row per slug already exists; this overwrites its response/name/pax.
+ */
+export async function updateRsvp(entry) {
+  const patch = {
+    name: entry.name.trim(),
+    response: entry.response,
+    pax: entry.pax ?? (entry.response === 'yes' ? 1 : 0),
+    note: entry.note || '',
+  }
+ 
+  if (BACKEND === 'supabase') {
+    // Update via a SECURITY DEFINER RPC. A direct table UPDATE silently affects
+    // zero rows for anonymous guests: with no SELECT policy for the anon role,
+    // PostgREST can't "see" the row to locate it, so the WHERE matches nothing
+    // (and still returns 204). The RPC updates the single row by slug with
+    // elevated rights, sidestepping that.
+    const { error } = await supabase.rpc('update_rsvp', {
+      p_slug: entry.slug,
+      p_name: patch.name,
+      p_response: patch.response,
+      p_pax: patch.pax,
+      p_note: patch.note,
+    })
+    if (error) throw new Error(error.message)
+    return { id: `sb_${Date.now()}`, ...patch, edition: entry.edition || 'singapore', slug: entry.slug, timestamp: new Date().toISOString() }
+  }
+ 
+  // local
+  if (storageAvailable()) memory = localReadAll()
+  let updated = null
+  memory = memory.map((r) => {
+    if (r.slug === entry.slug) {
+      updated = { ...r, ...patch, timestamp: new Date().toISOString() }
+      return updated
+    }
+    return r
+  })
+  localWriteAll(memory)
+  return updated || { id: `r_${Date.now()}`, ...patch, slug: entry.slug, timestamp: new Date().toISOString() }
+}
+ 
+/**
+ * Look up whether a specific invite link (slug) has already responded.
+ * Returns { name, response, slug } or null. Used on page load to decide whether
+ * to show the RSVP buttons or the "update your response" view.
+ *
+ * In Supabase mode this calls a security-definer RPC that returns ONLY the row
+ * for the given slug, so the public anon key can't list everyone's responses.
+ */
+export async function getRsvpStatus(slug) {
+  if (!slug) return null
+ 
+  if (BACKEND === 'supabase') {
+    const { data, error } = await supabase.rpc('get_rsvp_status', { p_slug: slug })
+    if (error) throw new Error(error.message)
+    const row = Array.isArray(data) ? data[0] : data
+    return row ? { name: row.name, response: row.response, slug } : null
+  }
+ 
+  // local
+  if (storageAvailable()) memory = localReadAll()
+  const r = memory.find((x) => x.slug === slug)
+  return r ? { name: r.name, response: r.response, slug } : null
 }
  
 /** Return all stored RSVPs, newest first. */

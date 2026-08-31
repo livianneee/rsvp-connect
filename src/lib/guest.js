@@ -21,16 +21,41 @@ export function titleCase(raw) {
     .trim()
 }
 
-export function getGuestName(pathname = '/') {
+// Raw first path segment (decoded), or '' if none/reserved.
+function firstSegment(pathname = '/') {
   let seg = ''
   try {
     seg = decodeURIComponent((pathname || '/').split('/').filter(Boolean)[0] || '')
   } catch {
     seg = ''
   }
-  if (seg && !seg.includes('.') && !RESERVED.has(seg.toLowerCase())) {
+  if (seg && !seg.includes('.') && !RESERVED.has(seg.toLowerCase())) return seg
+  return ''
+}
+
+export function getGuestName(pathname = '/') {
+  const seg = firstSegment(pathname)
+  if (seg) {
     const name = titleCase(seg)
     if (name) return name
   }
   return 'Guest'
+}
+
+// Turn any text into a stable url-safe slug: "Jane Doe" -> "jane-doe".
+export function slugify(text = '') {
+  return text
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+// Stable per-guest key used to enforce one RSVP per invite link.
+// Uses the link's path slug when present; otherwise derives one from the name.
+export function getGuestSlug(pathname = '/', fallbackName = '') {
+  return slugify(firstSegment(pathname)) || slugify(fallbackName)
 }

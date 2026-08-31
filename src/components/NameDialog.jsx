@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Modal that collects the guest's name after they pick Yes / No.
-// This is where the RSVP data (name + response) is captured before it is stored.
+// Confirm dialog after the guest picks Yes / No.
+// When `lockedName` is set (the name comes from the invite link), it's shown
+// read-only so the guest can't RSVP under someone else's name. Otherwise a text
+// field is shown (used only for the generic link that has no name).
 export default function NameDialog({
   response,
+  lockedName = '',
   defaultName = '',
   saving = false,
   errorMessage = '',
   onCancel,
   onSubmit,
 }) {
+  const isLocked = Boolean(lockedName)
   const [name, setName] = useState(defaultName)
   const [error, setError] = useState('')
   const inputRef = useRef(null)
@@ -17,17 +21,21 @@ export default function NameDialog({
   const isYes = response === 'yes'
 
   useEffect(() => {
-    inputRef.current?.focus()
+    if (!isLocked) inputRef.current?.focus()
     const onKey = (e) => {
       if (e.key === 'Escape' && !saving) onCancel()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onCancel, saving])
+  }, [onCancel, saving, isLocked])
 
   function handleSubmit(e) {
     e.preventDefault()
     if (saving) return
+    if (isLocked) {
+      onSubmit(lockedName)
+      return
+    }
     const trimmed = name.trim()
     if (trimmed.length < 2) {
       setError('Please enter your name so we can register your RSVP.')
@@ -66,30 +74,43 @@ export default function NameDialog({
           {isYes ? 'Confirm your RSVP' : 'Let us know it’s you'}
         </h2>
         <p className="mt-2 font-sans text-sm text-ink/60">
-          {isYes
-            ? 'Enter your name to confirm your spot at GT Connect Singapore.'
-            : 'Enter your name so we can note that you can’t make it.'}
+          {isLocked
+            ? isYes
+              ? 'Please confirm your attendance at GT Connect Singapore.'
+              : 'Please confirm you can’t make it.'
+            : isYes
+              ? 'Enter your name to confirm your spot at GT Connect Singapore.'
+              : 'Enter your name so we can note that you can’t make it.'}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5">
-          <label htmlFor="rsvp-name" className="font-sans text-sm font-medium text-ink/80">
-            Your name
-          </label>
-          <input
-            id="rsvp-name"
-            ref={inputRef}
-            type="text"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value)
-              if (error) setError('')
-            }}
-            placeholder="e.g. Olivia Yulianne"
-            autoComplete="name"
-            disabled={saving}
-            style={{ colorScheme: 'light', backgroundColor: '#ffffff', color: '#242424' }}
-            className="mt-1.5 w-full rounded-lg border border-ink/20 bg-white px-4 py-3 font-sans text-base text-ink placeholder:text-ink/35 outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/40 disabled:opacity-60"
-          />
+          <span className="font-sans text-sm font-medium text-ink/80">Your name</span>
+          {isLocked ? (
+            <>
+              <div className="mt-1.5 flex w-full items-center rounded-lg border border-ink/15 bg-slate-50 px-4 py-3 font-sans text-base font-medium text-ink">
+                {lockedName}
+              </div>
+              <p className="mt-1.5 font-sans text-xs text-ink/45">
+                Your name comes from your personal invite link and can’t be changed.
+              </p>
+            </>
+          ) : (
+            <input
+              id="rsvp-name"
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (error) setError('')
+              }}
+              placeholder="e.g. Olivia Yulianne"
+              autoComplete="name"
+              disabled={saving}
+              style={{ colorScheme: 'light', backgroundColor: '#ffffff', color: '#242424' }}
+              className="mt-1.5 w-full rounded-lg border border-ink/20 bg-white px-4 py-3 font-sans text-base text-ink placeholder:text-ink/35 outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/40 disabled:opacity-60"
+            />
+          )}
           {error && <p className="mt-2 font-sans text-sm text-red-600">{error}</p>}
           {errorMessage && <p className="mt-2 font-sans text-sm text-red-600">{errorMessage}</p>}
 

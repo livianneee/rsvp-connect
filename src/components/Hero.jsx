@@ -48,24 +48,31 @@ export default function Hero({ edition }) {
 
       {/* Foreground branding */}
       <div className="relative flex w-full max-w-wide flex-col items-center px-6 pb-16 pt-[clamp(28px,6vh,56px)] text-center">
-        {/* Sponsors */}
-        {edition.sponsors?.length > 0 && (
+        {/* Presenter + sponsor logos, then "presents" */}
+        {edition.logos?.length > 0 && (
           <div className="flex flex-col items-center gap-3">
-            <p className="font-sans text-sm font-semibold text-white/90">Sponsors:</p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-              {edition.sponsors.map((s) => (
-                <a
-                  key={s.name}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.name}
-                  className="inline-flex items-center transition-opacity hover:opacity-80"
-                >
-                  <img src={s.logo} alt={s.name} className={s.className || 'h-6 w-auto sm:h-7'} />
-                </a>
-              ))}
+              {edition.logos.map((s) => {
+                const img = <img src={s.logo} alt={s.name} className={s.className || 'h-6 w-auto'} />
+                return s.url ? (
+                  <a
+                    key={s.name}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.name}
+                    className="inline-flex items-center transition-opacity hover:opacity-80"
+                  >
+                    {img}
+                  </a>
+                ) : (
+                  <span key={s.name} className="inline-flex items-center">
+                    {img}
+                  </span>
+                )
+              })}
             </div>
+            <p className="font-poppins text-sm font-bold tracking-[0.2em] text-white/90">presents</p>
           </div>
         )}
 

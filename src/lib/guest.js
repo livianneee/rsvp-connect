@@ -20,7 +20,7 @@ export function titleCase(raw) {
     .join(' ')
     .trim()
 }
- 
+
 // Raw first path segment (decoded), or '' if none/reserved.
 function firstSegment(pathname = '/') {
   let seg = ''
@@ -32,7 +32,7 @@ function firstSegment(pathname = '/') {
   if (seg && !seg.includes('.') && !RESERVED.has(seg.toLowerCase())) return seg
   return ''
 }
- 
+
 export function getGuestName(pathname = '/') {
   const seg = firstSegment(pathname)
   if (seg) {
@@ -41,7 +41,7 @@ export function getGuestName(pathname = '/') {
   }
   return 'Guest'
 }
- 
+
 // Turn any text into a stable url-safe slug: "Jane Doe" -> "jane-doe".
 export function slugify(text = '') {
   return text
@@ -53,7 +53,7 @@ export function slugify(text = '') {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 }
- 
+
 // Stable per-guest key used to enforce one RSVP per invite link.
 // Uses the link's path slug when present; otherwise derives one from the name.
 export function getGuestSlug(pathname = '/', fallbackName = '') {

@@ -12,7 +12,8 @@ import heroSingapore from '../assets/images/hero-singapore.jpg'
 import logoGtConnect from '../assets/images/logo-gt-connect.png'
 import sponsorMavic from '../assets/images/sponsor-mavic.png'
 import sponsorAirwallex from '../assets/images/sponsor-airwallex.png'
- 
+import logoGlobaltixDark from '../assets/images/logo-globaltix-dark.png'
+
 export const editions = {
   singapore: {
     slug: 'singapore',
@@ -23,23 +24,19 @@ export const editions = {
     logo: logoGtConnect,
     // Text fallback used only when `logo` is null.
     brand: { part1: 'GlobalTix', part2: 'Connect' },
- 
-    // Event sponsors shown at the top of the hero. Each logo links out.
-    // `className` overrides the logo size per sponsor (width auto-adjusts).
-    sponsors: [
+
+    // Logos shown at the top of the hero, followed by the word "presents".
+    // Rendered at a uniform height; `url` (optional) makes a logo clickable.
+    logos: [
+      { name: 'GlobalTix', logo: logoGlobaltixDark, className: 'h-3 w-auto' },
       { name: 'Mavic', logo: sponsorMavic, url: 'https://mavic.ai/' },
-      {
-        name: 'Airwallex',
-        logo: sponsorAirwallex,
-        url: 'https://www.airwallex.com/global',
-        className: 'h-4 w-auto',
-      },
+      { name: 'Airwallex', logo: sponsorAirwallex, url: 'https://www.airwallex.com/global', className: 'h-3.5 w-auto' },
     ],
- 
+
     intro: [
-      'The GlobalTix network has grown—and it’s time to bring our community together. ✨',
-      'You’re exclusively invited to GT Connect Singapore, an intimate evening for our partners to reconnect, exchange ideas and discover new opportunities across the travel ecosystem.',
-      'We’d love to have you with us. Please RSVP below.',
+      'We’re excited to welcome you back for another year of GT Connect Singapore!',
+      'What began as a simple gathering has grown into a vibrant community of travel partners coming together to exchange ideas, build meaningful connections and uncover new opportunities.',
+      'Join us once again for an evening with familiar faces, new introductions and the people shaping the future of travel across the region. We look forward to connecting with you!',
     ],
  
     transferNote: 'This invitation is extended exclusively and is not transferable.',

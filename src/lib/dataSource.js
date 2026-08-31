@@ -10,15 +10,15 @@
 //
 // The rest of the app doesn't care which backend is active.
 // -----------------------------------------------------------------------------
- 
+
 import { supabase, hasSupabase } from './supabaseClient.js'
- 
+
 export const BACKEND = hasSupabase ? 'supabase' : 'local'
 const TABLE = 'rsvps'
 const STORAGE_KEY = 'gtx_rsvp_responses'
- 
+
 // ---- Local (in-browser) helpers ------------------------------------------
- 
+
 function storageAvailable() {
   try {
     const k = '__gtx_test__'
@@ -29,7 +29,7 @@ function storageAvailable() {
     return false
   }
 }
- 
+
 function localReadAll() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -38,7 +38,7 @@ function localReadAll() {
     return []
   }
 }
- 
+
 function localWriteAll(list) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
@@ -46,9 +46,9 @@ function localWriteAll(list) {
     /* storage unavailable — keep in-memory only */
   }
 }
- 
+
 let memory = typeof window !== 'undefined' ? localReadAll() : []
- 
+
 // Normalise a Supabase row to the shape the UI expects.
 function normalize(row) {
   return {
@@ -62,9 +62,9 @@ function normalize(row) {
     timestamp: row.created_at || row.timestamp,
   }
 }
- 
+
 // ---- Public API -----------------------------------------------------------
- 
+
 /**
  * Persist one RSVP.
  * @param {{name: string, response: 'yes'|'no', edition?: string, pax?: number, note?: string}} entry
@@ -79,7 +79,7 @@ export async function submitRsvp(entry) {
     note: entry.note || '',
     slug: entry.slug || '', // per-invite-link key; unique in the DB
   }
- 
+
   if (BACKEND === 'supabase') {
     // No .select() here on purpose: guests (anon) can INSERT but not SELECT under
     // the secure RLS policies, so reading the row back would be denied. We just
@@ -92,7 +92,7 @@ export async function submitRsvp(entry) {
     }
     return { id: `sb_${Date.now()}`, ...base, timestamp: new Date().toISOString() }
   }
- 
+
   // local
   if (base.slug) {
     memory = storageAvailable() ? localReadAll() : memory
@@ -109,7 +109,7 @@ export async function submitRsvp(entry) {
   localWriteAll(memory)
   return record
 }
- 
+
 // Thrown when an invite link has already submitted an RSVP.
 export class DuplicateRsvpError extends Error {
   constructor() {
@@ -118,7 +118,7 @@ export class DuplicateRsvpError extends Error {
     this.code = 'DUPLICATE'
   }
 }
- 
+
 /**
  * Update the existing RSVP for an invite link (the "change once" flow).
  * One row per slug already exists; this overwrites its response/name/pax.
@@ -130,7 +130,7 @@ export async function updateRsvp(entry) {
     pax: entry.pax ?? (entry.response === 'yes' ? 1 : 0),
     note: entry.note || '',
   }
- 
+
   if (BACKEND === 'supabase') {
     // Update via a SECURITY DEFINER RPC. A direct table UPDATE silently affects
     // zero rows for anonymous guests: with no SELECT policy for the anon role,
@@ -147,7 +147,7 @@ export async function updateRsvp(entry) {
     if (error) throw new Error(error.message)
     return { id: `sb_${Date.now()}`, ...patch, edition: entry.edition || 'singapore', slug: entry.slug, timestamp: new Date().toISOString() }
   }
- 
+
   // local
   if (storageAvailable()) memory = localReadAll()
   let updated = null
@@ -161,7 +161,7 @@ export async function updateRsvp(entry) {
   localWriteAll(memory)
   return updated || { id: `r_${Date.now()}`, ...patch, slug: entry.slug, timestamp: new Date().toISOString() }
 }
- 
+
 /**
  * Look up whether a specific invite link (slug) has already responded.
  * Returns { name, response, slug } or null. Used on page load to decide whether
@@ -172,20 +172,20 @@ export async function updateRsvp(entry) {
  */
 export async function getRsvpStatus(slug) {
   if (!slug) return null
- 
+
   if (BACKEND === 'supabase') {
     const { data, error } = await supabase.rpc('get_rsvp_status', { p_slug: slug })
     if (error) throw new Error(error.message)
     const row = Array.isArray(data) ? data[0] : data
     return row ? { name: row.name, response: row.response, slug } : null
   }
- 
+
   // local
   if (storageAvailable()) memory = localReadAll()
   const r = memory.find((x) => x.slug === slug)
   return r ? { name: r.name, response: r.response, slug } : null
 }
- 
+
 /** Return all stored RSVPs, newest first. */
 export async function getRsvps() {
   if (BACKEND === 'supabase') {
@@ -196,12 +196,12 @@ export async function getRsvps() {
     if (error) throw new Error(error.message)
     return (data || []).map(normalize)
   }
- 
+
   // local
   if (storageAvailable()) memory = localReadAll()
   return [...memory].reverse()
 }
- 
+
 /** Remove every stored RSVP. Local backend only. */
 export async function clearRsvps() {
   if (BACKEND === 'supabase') {
@@ -212,14 +212,14 @@ export async function clearRsvps() {
   memory = []
   localWriteAll(memory)
 }
- 
+
 // ---- CSV export -----------------------------------------------------------
- 
+
 function csvEscape(value) {
   const s = String(value ?? '')
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
- 
+
 export function toCsv(rows) {
   const header = ['Name', 'RSVP', 'Pax', 'Note', 'Edition', 'Timestamp']
   const body = rows.map((r) =>
@@ -234,7 +234,7 @@ export function toCsv(rows) {
   )
   return [header.join(','), ...body].join('\n')
 }
- 
+
 export function downloadCsv(rows, filename = 'gt-connect-rsvps.csv') {
   const csv = toCsv(rows)
   const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })

@@ -50,7 +50,8 @@ try {
   // ---- RSVP: Yes flow ----
   await page.getByRole('button', { name: /Yes, I/ }).click()
   check('dialog opens', (await page.getByRole('dialog').count()) > 0)
-  check('name prefilled from invite', (await page.locator('#rsvp-name').inputValue()) === 'Olivia')
+  check('name locked from link (no input)', (await page.locator('#rsvp-name').count()) === 0)
+  check('locked name shown', (await page.locator('[role=dialog]').getByText('Olivia').count()) > 0)
   await page.getByRole('button', { name: /Confirm attendance/ }).click()
   await page.waitForSelector('text=/You’re confirmed/')
   check('confirmation shown', (await page.locator('text=/You’re confirmed/').count()) > 0)
@@ -102,6 +103,52 @@ try {
   check('path /liviane greets "Liviane"', (await ppage.locator('text=Liviane').count()) > 0)
   await ppage.goto(`${base}/index.html`, { waitUntil: 'networkidle' })
   check('no path -> greets "Guest"', (await ppage.locator('span:has-text("Guest")').count()) > 0)
+
+  // ---- One row per link, DB-checked, name locked, unlimited updates ----
+  const octx = await browser.newContext({ viewport: { width: 1200, height: 900 } })
+  const opage = await octx.newPage()
+  await opage.route('**/joey-ong', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: indexHtml }),
+  )
+  const rowsFor = (p, slug) =>
+    p.evaluate(
+      (s) => JSON.parse(localStorage.getItem('gtx_rsvp_responses') || '[]').filter((r) => r.slug === s),
+      slug,
+    )
+
+  // First response: Yes (name is locked to the link — no input)
+  await opage.goto(`${base}/joey-ong`, { waitUntil: 'networkidle' })
+  await opage.getByRole('button', { name: /Yes, I/ }).click()
+  check('name locked on joey-ong (no input)', (await opage.locator('#rsvp-name').count()) === 0)
+  await opage.getByRole('button', { name: /Confirm attendance/ }).click()
+  await opage.waitForSelector('text=/You’re confirmed/')
+  let rows = await rowsFor(opage, 'joey-ong')
+  check('one row for joey-ong after submit', rows.length === 1 && rows[0].name === 'Joey Ong')
+
+  // Returning to the same link is DB-checked -> shows confirmation + update
+  await opage.goto(`${base}/joey-ong`, { waitUntil: 'networkidle' })
+  await opage.waitForSelector('text=/You’re confirmed/')
+  check('returning link shows confirmation (from DB)', (await opage.locator('text=/You’re confirmed/').count()) > 0)
+  check('update link offered', (await opage.getByText(/Update my response/).count()) > 0)
+
+  // Update -> No
+  await opage.getByText(/Update my response/).click()
+  await opage.getByRole('button', { name: /No, can/ }).click()
+  await opage.getByRole('button', { name: /Send response/ }).click()
+  await opage.waitForSelector('text=/Response received/')
+  rows = await rowsFor(opage, 'joey-ong')
+  check('still one row after update (no duplicate)', rows.length === 1)
+  check('response updated to no', rows[0].response === 'no')
+
+  // Update AGAIN -> Yes (no limit on changes)
+  await opage.getByText(/Update my response/).click()
+  await opage.getByRole('button', { name: /Yes, I/ }).click()
+  await opage.getByRole('button', { name: /Confirm attendance/ }).click()
+  await opage.waitForSelector('text=/You’re confirmed/')
+  rows = await rowsFor(opage, 'joey-ong')
+  check('second update still one row', rows.length === 1)
+  check('response updated back to yes', rows[0].response === 'yes')
+  check('update still offered (unlimited)', (await opage.getByText(/Update my response/).count()) > 0)
 
   // ---- Mobile render ----
   const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true })

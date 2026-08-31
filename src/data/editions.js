@@ -7,7 +7,7 @@
 //
 // This mirrors the `editions.js` model described in the RSVP project docs.
 // -----------------------------------------------------------------------------
-
+ 
 import heroSingapore from '../assets/images/hero-singapore.jpg'
 import logoGtConnect from '../assets/images/logo-gt-connect.png'
 import sponsorMavic from '../assets/images/sponsor-mavic.png'
@@ -38,29 +38,29 @@ export const editions = {
       'What began as a simple gathering has grown into a vibrant community of travel partners coming together to exchange ideas, build meaningful connections and uncover new opportunities.',
       'Join us once again for an evening with familiar faces, new introductions and the people shaping the future of travel across the region. We look forward to connecting with you!',
     ],
-
+ 
     transferNote: 'This invitation is extended exclusively and is not transferable.',
-
+ 
     details: {
       date: { label: 'DATE', primary: '22nd October, Thursday', secondary: '5.00 pm - 9.00 pm' },
       registration: { label: 'REGISTRATION', primary: '4:30 PM', secondary: 'Ahead of programme start' },
       location: { label: 'LOCATION', primary: 'café nesuto', secondary: '@ Marina Bay Sands' },
       address: '2 Bayfront Avenue, The Shoppes, #01-87, Marina Bay Sands, Singapore 018972',
     },
-
+ 
     footer: {
       lines: [
         'Questions about your invitation? Reach out to your account manager.',
         'Please do not forward this invitation—it is registered to one guest only.',
       ],
     },
-
+ 
     // Real Marina Bay Sands hero photo. Set to `null` to fall back to the
     // twilight-gradient hero (see Hero.jsx).
     heroImage: heroSingapore,
   },
 }
-
+ 
 export function getEdition(slug) {
   return editions[slug] || editions.singapore
 }

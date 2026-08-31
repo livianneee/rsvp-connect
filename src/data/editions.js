@@ -43,7 +43,7 @@ export const editions = {
  
     details: {
       date: { label: 'DATE', primary: '22nd October, Thursday', secondary: '5.00 pm - 9.00 pm' },
-      registration: { label: 'REGISTRATION', primary: '4:30 PM', secondary: 'Ahead of programme start' },
+      registration: { label: 'REGISTRATION', prefix: 'From', primary: '4:30 PM', secondary: 'Ahead of programme start' },
       location: { label: 'LOCATION', primary: 'café nesuto', secondary: '@ Marina Bay Sands' },
       address: '2 Bayfront Avenue, The Shoppes, #01-87, Marina Bay Sands, Singapore 018972',
     },

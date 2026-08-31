@@ -5,15 +5,20 @@ function Column({ item, scriptPrimary = false }) {
     <div className="flex flex-1 flex-col items-center gap-6 text-center">
       <p className="font-sans text-xl font-bold text-gold sm:text-2xl">{item.label}</p>
       <div className="flex flex-col items-center gap-3">
-        <p
-          className={
-            scriptPrimary
-              ? 'font-script text-3xl font-semibold text-gold-soft'
-              : 'font-sans text-2xl font-medium text-gold-soft'
-          }
-        >
-          {item.primary}
-        </p>
+        <div className="flex flex-col items-center">
+          {item.prefix && (
+            <p className="font-sans text-sm font-medium text-white">{item.prefix}</p>
+          )}
+          <p
+            className={
+              scriptPrimary
+                ? 'font-script text-3xl font-semibold text-gold-soft'
+                : 'font-sans text-2xl font-medium text-gold-soft'
+            }
+          >
+            {item.primary}
+          </p>
+        </div>
         <p className="font-sans text-lg font-medium text-white sm:text-xl">{item.secondary}</p>
       </div>
     </div>

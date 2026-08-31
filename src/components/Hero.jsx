@@ -76,21 +76,17 @@ export default function Hero({ edition }) {
           </div>
         )}
 
-        <p className="mt-[clamp(44px,12vh,150px)] font-script text-[clamp(20px,2.4vw,26px)] leading-none text-white/95">
-          {edition.tagline}
-        </p>
-
         {edition.logo ? (
           // Real logo (includes the "SINGAPORE EDITION" label + wordmark)
           <img
             src={edition.logo}
             alt={`GlobalTix Connect — ${edition.editionName}`}
-            className="mt-5 h-auto w-full max-w-[640px]"
+            className="mt-[clamp(44px,12vh,150px)] h-auto w-full max-w-[640px]"
           />
         ) : (
           <>
             {edition.editionName && (
-              <p className="mt-4 font-sans text-[clamp(11px,1.4vw,14px)] font-bold uppercase tracking-[0.28em] text-white">
+              <p className="mt-[clamp(44px,12vh,150px)] font-sans text-[clamp(11px,1.4vw,14px)] font-bold uppercase tracking-[0.28em] text-white">
                 {edition.editionName}
               </p>
             )}

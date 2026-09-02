@@ -51,8 +51,12 @@ export default function Hero({ edition }) {
         {/* Presenter + sponsor logos, then "presents" */}
         {edition.logos?.length > 0 && (
           <div className="flex flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-              {edition.logos.map((s) => {
+            {/* 3-column grid so the middle logo (GlobalTix) is centered and lines
+                up with "presents" below, regardless of the side logos' widths. */}
+            <div className="grid w-full max-w-md grid-cols-3 items-center gap-x-4">
+              {edition.logos.map((s, i) => {
+                const align =
+                  i === 0 ? 'justify-self-end' : i === 2 ? 'justify-self-start' : 'justify-self-center'
                 const img = <img src={s.logo} alt={s.name} className={s.className || 'h-6 w-auto'} />
                 return s.url ? (
                   <a
@@ -61,12 +65,12 @@ export default function Hero({ edition }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className="inline-flex items-center transition-opacity hover:opacity-80"
+                    className={`inline-flex items-center transition-opacity hover:opacity-80 ${align}`}
                   >
                     {img}
                   </a>
                 ) : (
-                  <span key={s.name} className="inline-flex items-center">
+                  <span key={s.name} className={`inline-flex items-center ${align}`}>
                     {img}
                   </span>
                 )

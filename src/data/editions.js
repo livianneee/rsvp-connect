@@ -51,7 +51,6 @@ export const editions = {
     footer: {
       lines: [
         'Questions about your invitation? Reach out to your account manager.',
-        'Please do not forward this invitation—it is registered to one guest only.',
       ],
     },
  

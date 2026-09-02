@@ -8,10 +8,10 @@
 //
 // The path route relies on the SPA rewrite in vercel.json so /liviane serves the app.
 // -----------------------------------------------------------------------------
-
+ 
 // Path segments that are NOT guest names (app routes, asset folders, files).
 const RESERVED = new Set(['', 'index.html', 'admin', 'assets', 'favicon'])
-
+ 
 export function titleCase(raw) {
   return raw
     .split(/[\s_-]+/)

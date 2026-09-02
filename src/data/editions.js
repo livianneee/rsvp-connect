@@ -7,7 +7,7 @@
 //
 // This mirrors the `editions.js` model described in the RSVP project docs.
 // -----------------------------------------------------------------------------
-
+ 
 import heroSingapore from '../assets/images/hero-singapore.jpg'
 import logoGtConnect from '../assets/images/logo-gt-connect.png'
 import sponsorMavic from '../assets/images/sponsor-mavic.png'
@@ -47,20 +47,20 @@ export const editions = {
       location: { label: 'LOCATION', primary: 'café nesuto', secondary: '@ Marina Bay Sands' },
       address: '2 Bayfront Avenue, The Shoppes, #01-87, Marina Bay Sands, Singapore 018972',
     },
-
+ 
     footer: {
       lines: [
         'Questions about your invitation? Reach out to your account manager.',
         'Please do not forward this invitation—it is registered to one guest only.',
       ],
     },
-
+ 
     // Real Marina Bay Sands hero photo. Set to `null` to fall back to the
     // twilight-gradient hero (see Hero.jsx).
     heroImage: heroSingapore,
   },
 }
-
+ 
 export function getEdition(slug) {
   return editions[slug] || editions.singapore
 }

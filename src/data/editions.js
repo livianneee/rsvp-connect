@@ -28,9 +28,9 @@ export const editions = {
     // Logos shown at the top of the hero, followed by the word "presents".
     // Rendered at a uniform height; `url` (optional) makes a logo clickable.
     logos: [
+      { name: 'Airwallex', logo: sponsorAirwallex, url: 'https://www.airwallex.com/global', className: 'h-3.5 w-auto' },
       { name: 'GlobalTix', logo: logoGlobaltixDark, className: 'h-3 w-auto' },
       { name: 'Mavic', logo: sponsorMavic, url: 'https://mavic.ai/' },
-      { name: 'Airwallex', logo: sponsorAirwallex, url: 'https://www.airwallex.com/global', className: 'h-3.5 w-auto' },
     ],
 
     intro: [
@@ -39,7 +39,7 @@ export const editions = {
       'Join us once again for an evening with familiar faces, new introductions and the people shaping the future of travel across the region. We look forward to connecting with you!',
     ],
 
-    transferNote: 'This invitation is extended exclusively and is not transferable.',
+    transferNote: 'Save your spot and RSVP by 16 October.',
 
     details: {
       date: { label: 'DATE', primary: '22nd October, Thursday', secondary: '5.00 pm - 9.00 pm' },
